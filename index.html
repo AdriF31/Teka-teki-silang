@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>TTS</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    
+    <body>
+        <div class="wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-2">
+                      <b>Skor: </b> <i id="skor">0</i>
+                        <h6><u>Mendatar</u></h6>
+                        <div id="mendatar"></div>
+                        <h6><u>Menurun</u></h6>
+                        <div id="menurun"></div>
+                        <hr>
+                        <a href="#" class="btn btn-primary" id="btn_cek">Cek jawaban</a>
+                    </div>
+                    
+                    <div class="kotak col-lg-10">
+                        <div class="grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="question_lists.js"></script>
+        
+        <script type="text/javascript">
+            $(document).ready(function() {
+                var i,j,k;
+                var jml_kotak = 15;
+                var blok=true;
+                var a;
+                var skor = 0;
+                var total_skor = 0;
+                
+                var kotak_data = new Array();
+                var jawaban = new Array();
+                var salah = new Array();
+                
+                
+                $(".grid").css("grid-template"," repeat("+jml_kotak+", 10%)/repeat("+jml_kotak+", 10%)");
+                
+                for(i=0;i<jml_kotak;i++) {
+                    kotak_data[i] = new Array();
+                    for(j=0;j<jml_kotak;j++) {
+                        kotak_data[i][j] = new Array();
+                        kotak_data[i][j][0] = false;    //tempat pertanyaan
+                        kotak_data[i][j][1] = true;     //boleh diisi textbox
+                        kotak_data[i][j][2] = false;    //kolom yang diisi caption
+                        kotak_data[i][j][3] = -1;       //isi caption
+                        kotak_data[i][j][4] = "";
+                        kotak_data[i][j][5] = "";
+                        total_skor++;
+                    }
+                }
+                $.each(quiz, function(index, value) {
+                    var len = value[3].length;
+                    var a = 0;
+                    var bo = new Array();
+                    
+                    kotak_data[value[0]][value[1]][2] = true;
+                    kotak_data[value[0]][value[1]][3] = (index+1);
+                    
+                    if(value[4]==="turun") {
+                        $("#menurun").append("<font class='question' id='q"+(index)+"'>"+(index+1)+". "+value[2]+"</font><br>");
+                    } else if(value[4]==="datar") {
+                        $("#mendatar").append("<font class='question' id='q"+(index)+"'>"+(index+1)+". "+value[2]+"</font><br>");
+                    }
+                    
+                    for(a=0;a<len;a++) {
+                        var aa = value[0]+(value[4]==="turun"?a:0), ab = value[1]+(value[4]==="datar"?a:0);
+                        var ay = new Array();
+                        
+                        kotak_data[aa][ab][0] = true;
+                        kotak_data[aa][ab][4] = value[3].charAt(a);
+                        ay[0] = aa;
+                        ay[1] = ab;
+                        bo.push(ay);
+                    }
+                    jawaban.push(bo);
+                });
+
+                for(i=0;i<jml_kotak;i++) {
+                    for(j=0;j<jml_kotak;j++) {
+                        var y = $("<span>").addClass("grid__item grid_"+i+"_"+j);
+                        
+                        if(kotak_data[i][j][0]===true && kotak_data[i][j][1]===true) {
+                            var g;
+                            
+                            if(kotak_data[i][j][2]===true) {
+                                g = $('<input/>').attr({ type: 'text', class: 'for-tts', maxlength: '1', placeholder: kotak_data[i][j][3], row: i, col: j});
+                            } else {
+                                g = $('<input/>').attr({ type: 'text', class: 'for-tts', maxlength: '1', row: i, col: j});
+                            }
+                            
+                            g.appendTo(y); 
+                                        
+                            kotak_data[i][j][1]==false;
+                        }
+                        $(".grid").append(y);
+                    }
+                }
+                $("#skor").html(skor+"/"+total_skor);
+                $(".for-tts").on('input propertychange paste', function() {
+                    var huruf   = $(this).val().toUpperCase();
+                    var row     = $(this).attr("row");
+                    var col     = $(this).attr("col");
+                    
+                    kotak_data[row][col][5] = huruf;
+                });
+
+                $("#btn_cek").click(function() {
+                    salah = new Array();
+                    
+                    $(".grid__item").removeClass("input-salah");
+                    $(".question").removeClass("salah");
+                    $(".question").addClass("benar");
+                    
+                    $.each(quiz, function(index, value) {
+                        var jwb_data = jawaban[index];
+                        var kurang = 0;
+                        
+                        $.each(jwb_data, function(index2, value2) {
+                            if(kotak_data[value2[0]][value2[1]][4] != kotak_data[value2[0]][value2[1]][5]) {
+                                kurang++;
+                                $(".grid_"+value2[0]+"_"+value2[1]).addClass("input-salah");
+                            } else skor++;
+                        });
+                        
+                        if(kurang>0) salah.push(index);
+                    });
+
+                    $("#skor").html(skor+"/"+total_skor);
+
+                    
+                    $.each(salah, function(i, v) {
+                        $("#q"+v).removeClass("benar");
+                        $("#q"+v).addClass("salah");
+                    });
+                    
+                });
+            });
+
+        </script>
+    </body>
+</html>
